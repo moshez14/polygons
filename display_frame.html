@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Camera Frame</title>
+</head>
+<body>
+    <img id="frame" src="data:image/jpeg;base64,{{ frame_encoded }}" style="position: relative;">
+    <!-- Add a canvas to draw the rectangle -->
+    <canvas id="canvas" style="position: absolute; left: 0; top: 0;"></canvas>
+    <!-- Add a Save button -->
+    <button id="saveButton">Save</button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var canvas = document.getElementById('canvas');
+            var ctx = canvas.getContext('2d');
+            var img = document.getElementById('frame');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            var rect = {};
+            var drag = false;
+
+            function init() {
+                canvas.addEventListener('mousedown', mouseDown, false);
+                canvas.addEventListener('mouseup', mouseUp, false);
+                canvas.addEventListener('mousemove', mouseMove, false);
+            }
+
+            function mouseDown(e) {
+                rect.startX = e.pageX - canvas.offsetLeft;
+                rect.startY = e.pageY - canvas.offsetTop;
+                drag = true;
+            }
+
+            function mouseUp() {
+                drag = false;
+            }
+
+            function mouseMove(e) {
+                if (drag) {
+                    rect.w = (e.pageX - canvas.offsetLeft) - rect.startX;
+                    rect.h = (e.pageY - canvas.offsetTop) - rect.startY;
+                    draw();
+                }
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = "red";
+                ctx.strokeRect(rect.startX, rect.startY, rect.w, rect.h);
+            }
+
+            document.getElementById('saveButton').addEventListener('click', function() {
+                if (Object.keys(rect).length === 0) {
+                    alert("Please draw a rectangle first.");
+                } else {
+                    sendCoordinates();
+                }
+            });
+
+            function sendCoordinates() {
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", "/save_coords", true);
+                xhr.setRequestHeader("Content-Type", "application/json");
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4 && xhr.status === 200) {
+                        window.location.href = '/'; // Redirect to the index page
+                    }
+                };
+                xhr.send(JSON.stringify({
+                    rect_coords: [rect.startX, rect.startY, rect.w, rect.h],
+                    camera_index: "{{ camera_index }}"
+                }));
+            }
+
+            init();
+        });
+    </script>
+</body>
+</html>
