@@ -5,14 +5,18 @@ import json
 import base64
 import requests
 import json
-app = Flask(__name__,template_folder='.')
+import subprocess
+from bson import ObjectId
+
+
+app = Flask(__name__,template_folder='/home/ubuntu/polygon')
 width=0
 height=0
 # Function to capture a frame from the video stream
 def capture_frame(camera_index):
     global height
     global width
-    cap = cv2.VideoCapture(f"rtmp://www.maifocus.com:1935/live_hls/{camera_index}")
+    cap = cv2.VideoCapture(f"rtmp://dev.maifocus.com:1935/live_hls/{camera_index}")
     if not cap.isOpened():
         print("Error opening video stream.")
         return None
@@ -26,19 +30,19 @@ def capture_frame(camera_index):
 
 def retrieve_missions(camera_index):
 
-    url = f"http://localhost:5500/api/mission/{camera_index}"
-    payload = ""
+    url_mission = f"http://localhost:5500/api/findRtmpCode/{camera_index}"
+    payload_mission = json.dumps({})
     headers = {
         'Content-Type': 'application/json-patch+json',
         'Authorization': 'Basic YWRtaW46QXVndV8yMDIz'
     }
 
-    response = requests.request("GET", url, headers=headers, data=payload)
-    return (response.json())
+    response = requests.request("GET", url_mission, headers=headers, data=payload_mission)
+    return json.loads(response.text)
 
 def add_polygon(data):
     url = f"http://localhost:5500/api/addpolygon"
-    payload = json.dumps({ "data" : data })
+    payload = json.dumps(data)
     headers = {
         'Content-Type': 'application/json-patch+json',
         'Authorization': 'Basic YWRtaW46QXVndV8yMDIz'
@@ -67,9 +71,9 @@ def save_to_json(rect_coords, camera_index):
     # Specify a directory you have write access to
     mission_det = retrieve_missions(camera_index)
     path = 'D:\\shared\\polygon\\' + file_name
-    data = {"mission_object": json.loads(mission_det['missionDetails'])[0]['_id'],
-            "camera_object": json.loads(mission_det['cameraData'])['_id'],
-            "camera_index": camera_index, "rect_coords": rect_coords, "rect_percentage":  rect_coords_percentage }
+    data = {"mission_id": mission_det['mission_id'],
+            "camera_id": mission_det['camera_id'],
+            "rtmpCode": camera_index, "rect_coords": rect_coords, "rect_percentage":  rect_coords_percentage }
     add_polygon(data)
     with open(path, 'w') as f:
         json.dump(data, f, indent=4)
