@@ -4,10 +4,31 @@
     <title>Camera App</title>
 </head>
 <body>
+	<h1>Polygon Detection</h1>
+	<h3>Notice: The camera needs to operate</h3>
     <form action="/capture" method="post">
-        <input type="text" name="camera_index" placeholder="Enter camera index">
+        <input type="text" name="camera_index" placeholder="Enter camera Code from the list below">
         <button type="submit">Capture</button>
     </form>
+</body>
+<body>
+    <h2>List of Running Cameras</h2>
+    <ul>
+	    <table borrder="1">
+		    <tr>
+			    <th>stream URL</th>
+			    <th>Code</th>
+			    <th>Mission Name</th>
+		    </tr>
+        {% for item in result %}
+	<tr>
+		<td>{{ item[0] }}</td>
+		<td>{{ item[1] }}</td>
+		<td>{{ item[2] }}</td>
+	</tr>
+        {% endfor %}
+	    </table>
+    </ul>
 </body>
 </html>
 

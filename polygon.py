@@ -81,7 +81,11 @@ def save_to_json(rect_coords, camera_index):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    result = subprocess.run("cat /home/ubuntu/livestream/cameras.dat | awk '{print $1,\",\",$NF,\",\",$3}'",shell=True, capture_output=True, text=True)
+    cameras = result.stdout.splitlines()
+    split_cameras = [camera.split(",") for camera in cameras]
+    print(result)
+    return render_template('index.html',result=split_cameras)
 
 @app.route('/capture', methods=['POST'])
 def capture():
