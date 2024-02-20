@@ -16,7 +16,7 @@ height=0
 def capture_frame(camera_index):
     global height
     global width
-    cap = cv2.VideoCapture(f"rtmp://dev.maifocus.com:1935/live_hls/{camera_index}")
+    cap = cv2.VideoCapture(f"rtmp://www.maifocus.com:1935/live_hls/{camera_index}")
     if not cap.isOpened():
         print("Error opening video stream.")
         return None
