@@ -81,8 +81,11 @@ def save_to_json(rect_coords, camera_index):
 
 @app.route('/')
 def index():
-    result = subprocess.run("cat /home/ubuntu/livestream/cameras.dat | awk '{print $1,\",\",$NF,\",\",$3}'",shell=True, capture_output=True, text=True)
+    user_email = request.args.get('user_email', '')
+    command = f"cat /home/ubuntu/livestream/cameras.dat | awk '{{print $1,\",\",$NF,\",\",$(NF-2),\" \",$3}}' | grep {user_email}"
+    result = subprocess.run(command, shell=True, capture_output=True, text=True)
     cameras = result.stdout.splitlines()
+
     split_cameras = [camera.split(",") for camera in cameras]
     print(result)
     return render_template('index.html',result=split_cameras)
@@ -92,7 +95,7 @@ def capture():
 
     camera_index = request.form.get('camera_index')
     frame = capture_frame(camera_index)
-
+ 
     if frame is not None:
         _, buffer = cv2.imencode('.jpg', frame)
         frame_encoded = base64.b64encode(buffer).decode('utf-8')
