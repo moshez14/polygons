@@ -7,6 +7,12 @@ import requests
 import json
 import subprocess
 from bson import ObjectId
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
 
 
 app = Flask(__name__,template_folder='/home/ubuntu/polygon')
@@ -16,7 +22,10 @@ height=0
 def capture_frame(camera_index):
     global height
     global width
-    cap = cv2.VideoCapture(f"rtmp://www.maifocus.com:1935/live_hls/{camera_index}")
+    print(f"POLYGON {camera_index}")
+    host = os.environ.get("HOST")
+    print(f"rtmp://{host}:1935/live_hls/{camera_index}")
+    cap = cv2.VideoCapture(f"rtmp://{host}:1935/live_hls/{camera_index}")
     if not cap.isOpened():
         print("Error opening video stream.")
         return None
@@ -78,11 +87,21 @@ def save_to_json(rect_coords, camera_index):
     with open(path, 'w') as f:
         json.dump(data, f, indent=4)
 
-
 @app.route('/')
 def index():
-    user_email = request.args.get('user_email', '')
-    command = f"cat /home/ubuntu/livestream/cameras.dat | awk '{{print $1,\",\",$NF,\",\",$(NF-2),\" \",$3}}' | grep {user_email}"
+    command = f"cat /home/ubuntu/livestream/cameras.dat | awk '{{print $(NF-2)}}' | sort -u"
+    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+    cameras = result.stdout.splitlines()
+
+    split_cameras = [camera.split(",") for camera in cameras]
+    print(result)
+    return render_template('email.html',result=split_cameras)
+
+
+@app.route('/cameras', methods=['POST'])
+def index_c():
+    user_email = request.form.get('user_email')
+    command = f"cat /home/ubuntu/livestream/cameras.dat | awk '{{print $1,\",\",$NF,\",\",$3i,\",\"$(NF-2)}}' | grep {user_email}"
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
     cameras = result.stdout.splitlines()
 
@@ -94,6 +113,7 @@ def index():
 def capture():
 
     camera_index = request.form.get('camera_index')
+    print("POLYGON=camera_index=",camera_index)
     frame = capture_frame(camera_index)
  
     if frame is not None:
