@@ -18,13 +18,13 @@ load_dotenv()
 app = Flask(__name__,template_folder='/home/ubuntu/polygon')
 width=0
 height=0
+mission_id=0
 # Function to capture a frame from the video stream
 def capture_frame(camera_index):
     global height
     global width
     print(f"POLYGON {camera_index}")
     host = os.environ.get("HOST")
-    print(f"rtmp://{host}:1935/live_hls/{camera_index}")
     cap = cv2.VideoCapture(f"rtmp://{host}:1935/live_hls/{camera_index}")
     if not cap.isOpened():
         print("Error opening video stream.")
@@ -64,6 +64,7 @@ def add_polygon(data):
 def save_to_json(rect_coords, camera_index):
     global height
     global width
+    global mission_id
     #
     # Calculate percentage of polygon within frame
     #
@@ -80,7 +81,7 @@ def save_to_json(rect_coords, camera_index):
     # Specify a directory you have write access to
     mission_det = retrieve_missions(camera_index)
     path = 'D:\\shared\\polygon\\' + file_name
-    data = {"mission_id": mission_det['mission_id'],
+    data = {"mission_id": mission_id,
             "camera_id": mission_det['camera_id'],
             "rtmpCode": camera_index, "rect_coords": rect_coords, "rect_percentage":  rect_coords_percentage }
     add_polygon(data)
@@ -101,19 +102,21 @@ def index():
 @app.route('/cameras', methods=['POST'])
 def index_c():
     user_email = request.form.get('user_email')
-    command = f"cat /home/ubuntu/livestream/cameras.dat | awk '{{print $1,\",\",$NF,\",\",$3i,\",\"$(NF-2)}}' | grep {user_email}"
+    command = f"cat /home/ubuntu/livestream/cameras.dat | awk '{{print $1,\",\",$3,\",\",$NF,\",\",$(NF-1),\",\",$(NF-3)}}' | grep {user_email}"
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
     cameras = result.stdout.splitlines()
 
     split_cameras = [camera.split(",") for camera in cameras]
+    print(f"cameras_split={split_cameras}")
     print(result)
     return render_template('index.html',result=split_cameras)
 
 @app.route('/capture', methods=['POST'])
 def capture():
-
+    global mission_id
     camera_index = request.form.get('camera_index')
-    print("POLYGON=camera_index=",camera_index)
+    mission_id = request.form.get('mission_id')
+    print(f"POLYGON=camera_index={camera_index} mission_id={mission_id}")
     frame = capture_frame(camera_index)
  
     if frame is not None:
