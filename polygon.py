@@ -13,12 +13,12 @@ import os
 # Load environment variables from .env file
 load_dotenv()
 
+app = Flask(__name__, template_folder='/home/ubuntu/polygon')
+width = 0
+height = 0
+mission_id = 0
 
 
-app = Flask(__name__,template_folder='/home/ubuntu/polygon')
-width=0
-height=0
-mission_id=0
 # Function to capture a frame from the video stream
 def capture_frame(camera_index):
     global height
@@ -35,10 +35,10 @@ def capture_frame(camera_index):
     cap.release()
     return frame if ret else None
 
+
 # Function to save data to a JSON file
 
 def retrieve_missions(camera_index):
-
     url_mission = f"http://localhost:5500/api/findRtmpCode/{camera_index}"
     payload_mission = json.dumps({})
     headers = {
@@ -48,6 +48,7 @@ def retrieve_missions(camera_index):
 
     response = requests.request("GET", url_mission, headers=headers, data=payload_mission)
     return json.loads(response.text)
+
 
 def add_polygon(data):
     url = f"http://localhost:5500/api/addpolygon"
@@ -83,10 +84,11 @@ def save_to_json(rect_coords, camera_index):
     path = 'D:\\shared\\polygon\\' + file_name
     data = {"mission_id": mission_id,
             "camera_id": mission_det['camera_id'],
-            "rtmpCode": camera_index, "rect_coords": rect_coords, "rect_percentage":  rect_coords_percentage }
+            "rtmpCode": camera_index, "rect_coords": rect_coords, "rect_percentage": rect_coords_percentage}
     add_polygon(data)
     with open(path, 'w') as f:
         json.dump(data, f, indent=4)
+
 
 @app.route('/')
 def index():
@@ -96,7 +98,7 @@ def index():
 
     split_cameras = [camera.split(",") for camera in cameras]
     print(result)
-    return render_template('email.html',result=split_cameras)
+    return render_template('email.html', result=split_cameras)
 
 
 @app.route('/cameras', methods=['POST'])
@@ -109,7 +111,8 @@ def index_c():
     split_cameras = [camera.split(",") for camera in cameras]
     print(f"cameras_split={split_cameras}")
     print(result)
-    return render_template('index.html',result=split_cameras)
+    return render_template('index.html', result=split_cameras)
+
 
 @app.route('/capture', methods=['POST'])
 def capture():
@@ -118,11 +121,27 @@ def capture():
     mission_id = request.form.get('mission_id')
     print(f"POLYGON=camera_index={camera_index} mission_id={mission_id}")
     frame = capture_frame(camera_index)
- 
+
     if frame is not None:
         _, buffer = cv2.imencode('.jpg', frame)
         frame_encoded = base64.b64encode(buffer).decode('utf-8')
         return render_template('display_frame.html', frame_encoded=frame_encoded, camera_index=camera_index)
+    else:
+        return "Failed to capture frame from the video stream."
+
+@app.route('/captureimage/<mission_id>/<rtmpCode>', methods=['GET'])
+def captureimage(mission_id,rtmpCode):
+    #data = request.json
+    #mission_id = data.get("name")
+    #rtmpCode = data.get('rtmpCode')
+
+    print(f"POLYGON=camera_index={rtmpCode} mission_id={mission_id}")
+    frame = capture_frame(rtmpCode)
+
+    if frame is not None:
+        _, buffer = cv2.imencode('.jpg', frame)
+        frame_encoded = base64.b64encode(buffer).decode('utf-8')
+        return render_template('display_frame.html', frame_encoded=frame_encoded, camera_index=rtmpCode)
     else:
         return "Failed to capture frame from the video stream."
 
@@ -135,5 +154,6 @@ def save_coords():
     save_to_json(rect_coords, camera_index)
     return jsonify({"message": "Coordinates saved successfully"})
 
+
 if __name__ == '__main__':
-    app.run(debug=True,host='0.0.0.0',port=5600)
+    app.run(debug=True, host='0.0.0.0', port=5600)
