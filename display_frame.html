@@ -69,7 +69,8 @@
                 };
                 xhr.send(JSON.stringify({
                     rect_coords: [rect.startX, rect.startY, rect.w, rect.h],
-                    camera_index: "{{ camera_index }}"
+                    camera_index: "{{ camera_index }}",
+                    mission_id: "{{ mission_id }}"
                 }));
             }
 

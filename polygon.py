@@ -62,10 +62,10 @@ def add_polygon(data):
     print(response.text)
 
 
-def save_to_json(rect_coords, camera_index):
+def save_to_json(rect_coords, camera_index,mission_id):
     global height
     global width
-    global mission_id
+    #global mission_id
     #
     # Calculate percentage of polygon within frame
     #
@@ -80,14 +80,16 @@ def save_to_json(rect_coords, camera_index):
     rect_coords_percentage = [x_min_percentage, y_min_percentage, x_max_percentage, y_max_percentage]
     file_name = f'{camera_index}_data.json'
     # Specify a directory you have write access to
+    print(f'RECT COORDS={rect_coords} HEIGHT={height}')
+    print(f'MISSION ID={mission_id}')
     mission_det = retrieve_missions(camera_index)
-    path = 'D:\\shared\\polygon\\' + file_name
+    #path = 'D:\\shared\\polygon\\' + file_name
     data = {"mission_id": mission_id,
             "camera_id": mission_det['camera_id'],
             "rtmpCode": camera_index, "rect_coords": rect_coords, "rect_percentage": rect_coords_percentage}
     add_polygon(data)
-    with open(path, 'w') as f:
-        json.dump(data, f, indent=4)
+    #with open(path, 'w') as f:
+    #    json.dump(data, f, indent=4)
 
 
 @app.route('/')
@@ -116,7 +118,7 @@ def index_c():
 
 @app.route('/capture', methods=['POST'])
 def capture():
-    global mission_id
+    #global mission_id
     camera_index = request.form.get('camera_index')
     mission_id = request.form.get('mission_id')
     print(f"POLYGON=camera_index={camera_index} mission_id={mission_id}")
@@ -125,7 +127,7 @@ def capture():
     if frame is not None:
         _, buffer = cv2.imencode('.jpg', frame)
         frame_encoded = base64.b64encode(buffer).decode('utf-8')
-        return render_template('display_frame.html', frame_encoded=frame_encoded, camera_index=camera_index)
+        return render_template('display_frame.html', frame_encoded=frame_encoded, camera_index=camera_index, mission_id=mission_id)
     else:
         return "Failed to capture frame from the video stream."
 
@@ -141,17 +143,20 @@ def captureimage(mission_id,rtmpCode):
     if frame is not None:
         _, buffer = cv2.imencode('.jpg', frame)
         frame_encoded = base64.b64encode(buffer).decode('utf-8')
-        return render_template('display_frame.html', frame_encoded=frame_encoded, camera_index=rtmpCode)
+        return render_template('display_frame.html', frame_encoded=frame_encoded, camera_index=rtmpCode,mission_id=mission_id)
     else:
         return "Failed to capture frame from the video stream."
 
 @app.route('/save_coords', methods=['POST'])
 def save_coords():
+    #global mission_id
     data = request.get_json()
-    print(width)
+    print(f'DATA={data}')
     rect_coords = data['rect_coords']
     camera_index = data['camera_index']
-    save_to_json(rect_coords, camera_index)
+    mission_id = data['mission_id']
+    print(f'In SAVE COORDS mission_id={mission_id}')
+    save_to_json(rect_coords, camera_index,mission_id)
     return jsonify({"message": "Coordinates saved successfully"})
 
 
