@@ -80,13 +80,14 @@
 <body>
     <h2>List of Running Cameras</h2>
     <ul>
-	    <table borrder=style="border: 1px solid black;>
+	    <table border="1" borrder=style="border: 1px solid black;>
 		    <tr>
 			    <th>stream URL</th>
 			    <th>Mission Name</th>
 			    <th>Mission Code</th>
 			    <th>Camera Code</th>
 			    <th>Email</th>
+			    <th>Polygon</th>
 		    </tr>
         {% for item in result %}
 	<tr>
@@ -95,6 +96,7 @@
 		<td>{{ item[2] }}</td>
 		<td>{{ item[3] }}</td>
 		<td>{{ item[4] }}</td>
+		<td><img src="http://dev.maifocus.com:8080/polygon/{{item[3] }}_{{ item[2] }}.jpg" style="max-width: 700px;"></td>
 	</tr>
         {% endfor %}
 	    </table>

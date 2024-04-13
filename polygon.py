@@ -110,7 +110,8 @@ def index_c():
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
     cameras = result.stdout.splitlines()
 
-    split_cameras = [camera.split(",") for camera in cameras]
+    split_cameras = [[part.strip().replace("_", "") for part in camera.split(",")] for camera in cameras]
+   # split_cameras = [camera.split(",") for camera in cameras]
     print(f"cameras_split={split_cameras}")
     print(result)
     return render_template('index.html', result=split_cameras)
@@ -151,10 +152,20 @@ def captureimage(mission_id,rtmpCode):
 def save_coords():
     #global mission_id
     data = request.get_json()
+    image_data=data['image_data']
     print(f'DATA={data}')
     rect_coords = data['rect_coords']
     camera_index = data['camera_index']
     mission_id = data['mission_id']
+        # Decode the base64 encoded image data
+    image_bytes = base64.b64decode(image_data.split(',')[1])
+
+    # Specify the path where you want to save the image
+    image_path = f"/var/www/html/polygon/{camera_index}_{mission_id}.jpg"
+
+    # Save the image to the specified path
+    with open(image_path, 'wb') as f:
+        f.write(image_bytes)
     print(f'In SAVE COORDS mission_id={mission_id}')
     save_to_json(rect_coords, camera_index,mission_id)
     return jsonify({"message": "Coordinates saved successfully"})
