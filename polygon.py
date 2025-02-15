@@ -1,12 +1,9 @@
 from flask import Flask, render_template, request, jsonify
 import cv2
-import numpy as np
-import json
 import base64
 import requests
 import json
 import subprocess
-from bson import ObjectId
 from dotenv import load_dotenv
 import os
 
@@ -62,31 +59,19 @@ def add_polygon(data):
     print(response.text)
 
 
-def save_to_json(rect_coords, camera_index,mission_id):
+def save_to_json(polygon_coords, camera_index,mission_id):
     global height
     global width
-    #global mission_id
-    #
-    # Calculate percentage of polygon within frame
-    #
-    x_min = rect_coords[0]
-    y_min = rect_coords[1]
-    x_max = x_min + rect_coords[2]
-    y_max = y_min + rect_coords[3]
-    x_min_percentage = x_min / width
-    y_min_percentage = y_min / height
-    x_max_percentage = x_max / width
-    y_max_percentage = y_max / height
-    rect_coords_percentage = [x_min_percentage, y_min_percentage, x_max_percentage, y_max_percentage]
+
     file_name = f'{camera_index}_data.json'
     # Specify a directory you have write access to
-    print(f'RECT COORDS={rect_coords} HEIGHT={height}')
+    print(f'POLYGON COORDS={polygon_coords} HEIGHT={height}')
     print(f'MISSION ID={mission_id}')
     mission_det = retrieve_missions(camera_index)
     #path = 'D:\\shared\\polygon\\' + file_name
     data = {"mission_id": mission_id,
             "camera_id": mission_det['camera_id'],
-            "rtmpCode": camera_index, "rect_coords": rect_coords, "rect_percentage": rect_coords_percentage}
+            "rtmpCode": camera_index, "polygon_coords": polygon_coords}
     add_polygon(data)
     #with open(path, 'w') as f:
     #    json.dump(data, f, indent=4)
@@ -154,7 +139,7 @@ def save_coords():
     data = request.get_json()
     image_data=data['image_data']
     print(f'DATA={data}')
-    rect_coords = data['rect_coords']
+    polygon_coords = data['polygon_coords']
     camera_index = data['camera_index']
     mission_id = data['mission_id']
         # Decode the base64 encoded image data
@@ -167,7 +152,7 @@ def save_coords():
     with open(image_path, 'wb') as f:
         f.write(image_bytes)
     print(f'In SAVE COORDS mission_id={mission_id}')
-    save_to_json(rect_coords, camera_index,mission_id)
+    save_to_json(polygon_coords, camera_index,mission_id)
     return jsonify({"message": "Coordinates saved successfully"})
 
 
