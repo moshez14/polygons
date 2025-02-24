@@ -155,6 +155,22 @@ def save_coords():
     save_to_json(polygon_coords, camera_index,mission_id)
     return jsonify({"message": "Coordinates saved successfully"})
 
+@app.route('/get_coords', methods=['POST'])
+def get_coords():
+    data = request.get_json()
+    camera_index = data['camera_index']
+    mission_id = data['mission_id']
+    url = f"http://localhost:5500/api/get_polygon/{mission_id}/{camera_index}?rtmpCode={camera_index}"
+
+    payload = ""
+    headers = {
+    'Content-Type': 'application/json-patch+json',
+    'Authorization': 'Basic YWRtaW46QXVndV8yMDIz'
+    }
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+    return response.json()
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5600)

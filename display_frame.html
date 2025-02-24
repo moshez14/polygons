@@ -2,155 +2,218 @@
 <html>
 <head>
     <title>Camera Frame</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            position: relative;
+        }
+
+        button {
+            margin: 10px;
+        }
+
+        img {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <img id="frame" src="data:image/jpeg;base64,{{ frame_encoded }}" style="display: none;">
-    <!-- Add a canvas to draw the rectangle -->
-    <canvas id="canvas" style="position: relative"></canvas>
+<img id="frame" src="data:image/jpeg;base64,{{ frame_encoded }}">
+<!-- Add a canvas to draw the polygon -->
+<canvas id="canvas"></canvas>
+<div>
+    <!-- Add a Select button -->
+    <button id="selectButton">Select</button>
     <!-- Add a Save button -->
     <button id="saveButton">Save</button>
     <!-- Add a Reset button -->
     <button id="resetButton">Reset</button>
+</div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var canvas = document.getElementById('canvas');
-            var ctx = canvas.getContext('2d');
-            var img = document.getElementById('frame');
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = document.getElementById('frame');
 
-            // Set canvas width and height to match the frame
-            canvas.width = img.width;
-            canvas.height = img.height;
+        // Set canvas width and height to match the frame
+        canvas.width = img.width;
+        canvas.height = img.height;
 
-            var polygons = [];
-            var clicks = [];
+        let polygons = [];
+        let clicks = [];
 
-            function init() {
-                canvas.addEventListener('mouseup', mouseUp, false);
-                redraw();
+        function init() {
+            getCoords();
+            canvas.addEventListener('contextmenu', e => e.preventDefault());
+            canvas.addEventListener('mouseup', mouseUp, false);
+            canvas.addEventListener('touchstart', touchStart, false);
+            canvas.addEventListener('touchend', touchEnd, false);
+        }
+
+        function mouseUp(e) {
+            if (e.button === 2) {
+                selectPolygon();
+            } else {
+                clicks.push([e.offsetX, e.offsetY]);
+            }
+            redraw();
+        }
+
+        function touchStart(e) {
+            e.preventDefault();
+        }
+
+        function touchEnd(e) {
+            const touch = e.changedTouches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+            clicks.push([x, y]);
+            redraw();
+        }
+
+        function redraw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+
+            drawPolygon();
+            drawPoints();
+        }
+
+        function drawPolygon() {
+            ctx.fillStyle = 'rgba(0,100,0,0.5)';
+            ctx.strokeStyle = "#ff0000";
+            ctx.lineWidth = 1;
+
+            ctx.beginPath();
+            for (let i = 0; i < polygons.length; i++) {
+                ctx.moveTo(polygons[i][0][0], polygons[i][0][1]);
+                for (let j = 0; j < polygons[i].length; j++) {
+                    ctx.lineTo(polygons[i][j][0], polygons[i][j][1]);
+                }
+                ctx.closePath();
+                ctx.stroke();
+            }
+            ctx.fill();
+
+            ctx.fillStyle = 'rgba(100,100,100,0.5)';
+
+            ctx.beginPath();
+            if (clicks.length > 1) {
+                ctx.moveTo(clicks[0][0], clicks[0][1]);
+                for (let i = 1; i < clicks.length; i++) {
+                    ctx.lineTo(clicks[i][0], clicks[i][1]);
+                }
+                ctx.stroke();
             }
 
-            function mouseUp(e) {
-                if (e.button === 2) {
-                    if (clicks.length < 3) {
-                        alert('Need at least 3 points to form a polygon.')
-                    } else {
-                        polygons.push([...clicks]);
-                        clicks = [];
-                    }
-                } else {
-                    clicks.push([e.offsetX, e.offsetY]);
-                }
-                redraw();
-            }
+            ctx.fill();
+        }
 
-            function redraw() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0);
+        function drawPoints() {
+            ctx.strokeStyle = "#df4b26";
+            ctx.lineJoin = "round";
+            ctx.lineWidth = 5;
 
-                drawPolygon();
-                drawPoints();
-            }
-
-            function drawPolygon() {
-                ctx.fillStyle = 'rgba(0,100,0,0.5)';
-                ctx.strokeStyle = "#ff0000";
-                ctx.lineWidth = 1;
-
-                ctx.beginPath();
-                for (let i = 0; i < polygons.length; i++) {
-                    ctx.moveTo(polygons[i][0][0], polygons[i][0][1]);
-                    for (let j = 0; j < polygons[i].length; j++) {
-                        ctx.lineTo(polygons[i][j][0], polygons[i][j][1]);
-                    }
-                    ctx.closePath();
-                    ctx.stroke();
-                }
-                ctx.fill();
-
-                ctx.fillStyle = 'rgba(100,100,100,0.5)';
-
-                ctx.beginPath();
-                if (clicks.length > 1) {
-                    ctx.moveTo(clicks[0][0], clicks[0][1]);
-                    for (let i = 1; i < clicks.length; i++) {
-                        ctx.lineTo(clicks[i][0], clicks[i][1]);
-                    }
-                    ctx.stroke();
-                }
-
-                ctx.fill();
-            }
-
-            function drawPoints() {
-                ctx.strokeStyle = "#df4b26";
-                ctx.lineJoin = "round";
-                ctx.lineWidth = 5;
-
-                for (let i = 0; i < polygons.length; i++) {
-                    for (let j = 0; j < polygons[i].length; j++) {
-                        ctx.beginPath();
-                        ctx.arc(polygons[i][j][0], polygons[i][j][1], 3, 0, 2 * Math.PI, false);
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fill();
-                        ctx.lineWidth = 5;
-                        ctx.stroke();
-                    }
-
-                }
-                for (let i = 0; i < clicks.length; i++) {
+            for (let i = 0; i < polygons.length; i++) {
+                for (let j = 0; j < polygons[i].length; j++) {
                     ctx.beginPath();
-                    ctx.arc(clicks[i][0], clicks[i][1], 3, 0, 2 * Math.PI, false);
+                    ctx.arc(polygons[i][j][0], polygons[i][j][1], 3, 0, 2 * Math.PI, false);
                     ctx.fillStyle = '#ffffff';
                     ctx.fill();
                     ctx.lineWidth = 5;
                     ctx.stroke();
                 }
+
             }
-
-            document.addEventListener('contextmenu', event => event.preventDefault());
-
-            document.getElementById('saveButton').addEventListener('click', function () {
-                if (clicks.length > 1 && clicks.length < 3) {
-                    alert("Need at least 3 points to form a polygon.");
-                } else {
-                    if (clicks.length > 0) {
-                        polygons.push([...clicks]);
-                    }
-                    clicks = [];
-                    redraw();
-                    saveImage();
-                }
-            });
-
-            document.getElementById('resetButton').addEventListener('click', function () {
-                polygons = [];
-                clicks = [];
-                redraw();
-            });
-
-            function saveImage() {
-                // Convert canvas content to data URL (JPEG format)
-                let dataURL = canvas.toDataURL('image/jpeg');
-                let xhr = new XMLHttpRequest();
-                xhr.open("POST", "/save_coords", true);
-                xhr.setRequestHeader("Content-Type", "application/json");
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4 && xhr.status === 200) {
-                        window.location.href = '/'; // Redirect to the index page
-                    }
-                };
-                xhr.send(JSON.stringify({
-                    image_data: dataURL,
-                    polygon_coords: polygons,
-                    camera_index: "{{ camera_index }}",
-                    mission_id: "{{ mission_id }}"
-                }));
+            for (let i = 0; i < clicks.length; i++) {
+                ctx.beginPath();
+                ctx.arc(clicks[i][0], clicks[i][1], 3, 0, 2 * Math.PI, false);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                ctx.lineWidth = 5;
+                ctx.stroke();
             }
+        }
 
-            init();
+        function selectPolygon() {
+            if (clicks.length === 0) {
+                return true;
+            }
+            if (clicks.length < 3) {
+                alert("Need at least 3 points to form a polygon.");
+                return false;
+            }
+            polygons.push([...clicks]);
+            clicks = [];
+            redraw();
+            return true;
+        }
+
+        document.getElementById('selectButton').addEventListener('click', function () {
+            selectPolygon();
         });
-    </script>
+
+        document.getElementById('saveButton').addEventListener('click', function () {
+            if (selectPolygon()) {
+                saveImage();
+            }
+        });
+
+        document.getElementById('resetButton').addEventListener('click', function () {
+            polygons = [];
+            clicks = [];
+            redraw();
+        });
+
+        function saveImage() {
+            // Convert canvas content to data URL (JPEG format)
+            let dataURL = canvas.toDataURL('image/jpeg');
+            let xhr = new XMLHttpRequest();
+            xhr.open("POST", "/save_coords", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    window.location.href = '/'; // Redirect to the index page
+                }
+            };
+            xhr.send(JSON.stringify({
+                image_data: dataURL,
+                polygon_coords: polygons,
+                camera_index: "{{ camera_index }}",
+                mission_id: "{{ mission_id }}"
+            }));
+        }
+
+        function getCoords() {
+            let xhr = new XMLHttpRequest();
+            xhr.open("POST", "/get_coords", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    polygons.push(...JSON.parse(this.responseText).polygon_coords);
+                    redraw();
+                }
+            };
+            xhr.send(JSON.stringify({
+                camera_index: "{{ camera_index }}",
+                mission_id: "{{ mission_id }}"
+            }));
+        }
+
+        init();
+    });
+</script>
 </body>
 </html>
 
