@@ -63,6 +63,9 @@ def save_to_json(polygon_coords, camera_index,mission_id):
     global height
     global width
 
+    # normalize the polygon coordinates
+    polygon_coords = [[(x / width, y / height) for x, y in polygon_coord] for polygon_coord in polygon_coords]
+
     file_name = f'{camera_index}_data.json'
     # Specify a directory you have write access to
     print(f'POLYGON COORDS={polygon_coords} HEIGHT={height}')
@@ -169,7 +172,10 @@ def get_coords():
     }
 
     response = requests.request("GET", url, headers=headers, data=payload)
-    return response.json()
+
+    # denormalize the polygon coordinates
+    polygon_coords = [[(x * width, y * height) for x, y in polygon_coord] for polygon_coord in json.loads(response.json()).get("polygon_coords")]
+    return {"polygon_coords": polygon_coords}
 
 
 if __name__ == '__main__':
