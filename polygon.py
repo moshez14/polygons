@@ -63,6 +63,9 @@ def save_to_json(polygon_coords, camera_index,mission_id):
     global height
     global width
 
+    # normalize the polygon coordinates
+    polygon_coords = [[(x / width, y / height) for x, y in polygon_coord] for polygon_coord in polygon_coords]
+
     file_name = f'{camera_index}_data.json'
     # Specify a directory you have write access to
     print(f'POLYGON COORDS={polygon_coords} HEIGHT={height}')
@@ -154,6 +157,25 @@ def save_coords():
     print(f'In SAVE COORDS mission_id={mission_id}')
     save_to_json(polygon_coords, camera_index,mission_id)
     return jsonify({"message": "Coordinates saved successfully"})
+
+@app.route('/get_coords', methods=['POST'])
+def get_coords():
+    data = request.get_json()
+    camera_index = data['camera_index']
+    mission_id = data['mission_id']
+    url = f"http://localhost:5500/api/get_polygon/{mission_id}/{camera_index}?rtmpCode={camera_index}"
+
+    payload = ""
+    headers = {
+    'Content-Type': 'application/json-patch+json',
+    'Authorization': 'Basic YWRtaW46QXVndV8yMDIz'
+    }
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+
+    # denormalize the polygon coordinates
+    polygon_coords = [[(x * width, y * height) for x, y in polygon_coord] for polygon_coord in json.loads(response.json()).get("polygon_coords")]
+    return {"polygon_coords": polygon_coords}
 
 
 if __name__ == '__main__':
