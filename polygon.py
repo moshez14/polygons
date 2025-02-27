@@ -94,7 +94,7 @@ def index():
 @app.route('/cameras', methods=['POST'])
 def index_c():
     user_email = request.form.get('user_email')
-    command = f"cat /home/ubuntu/livestream/cameras.dat | awk '{{print $1,\",\",$3,\",\",$NF,\",\",$(NF-1),\",\",$(NF-3)}}' | grep {user_email}"
+    command = f"cat /home/ubuntu/livestream/cameras.dat | awk '{{print $1,\",\",$4,\",\",$NF,\",\",$(NF-1),\",\",$(NF-3)}}' | grep {user_email}"
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
     cameras = result.stdout.splitlines()
 
