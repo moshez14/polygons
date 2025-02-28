@@ -174,7 +174,7 @@ def get_coords():
     response = requests.request("GET", url, headers=headers, data=payload)
 
     # denormalize the polygon coordinates
-    polygon_coords = [[(x * width, y * height) for x, y in polygon_coord] for polygon_coord in json.loads(response.json()).get("polygon_coords")]
+    polygon_coords = [[(x * width, y * height) for x, y in polygon_coord] for polygon_coord in response.json().get("polygon_coords", [])]
     return {"polygon_coords": polygon_coords}
 
 
