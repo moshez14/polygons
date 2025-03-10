@@ -49,8 +49,6 @@
         canvas.width = img.width;
         canvas.height = img.height;
 
-        const rect = canvas.getBoundingClientRect();
-
         let polygons = [];
         let clicks = [];
 
@@ -66,6 +64,7 @@
             if (e.button === 2) {
                 selectPolygon();
             } else {
+                const rect = canvas.getBoundingClientRect();
                 const x = (e.clientX - rect.left) * (canvas.width / rect.width);
                 const y = (e.clientY - rect.top) * (canvas.height / rect.height);
                 clicks.push([x, y]);
@@ -78,6 +77,7 @@
         }
 
         function touchEnd(e) {
+            const rect = canvas.getBoundingClientRect();
             const touch = e.changedTouches[0];
             const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
             const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
